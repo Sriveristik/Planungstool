@@ -3,7 +3,7 @@ const state = {
   view: 'month',          // 'month' | 'week' | 'day'
   cursor: new Date(),     // currently viewed date
   today: new Date(),
-  events: loadEvents(),
+  events: [],
   editId: null,
   activeFilters: new Set(['high', 'medium', 'low']),
   selectedColor: '#4f46e5',
@@ -11,11 +11,25 @@ const state = {
 };
 
 /* ─── Persistence ────────────────────────────────────────────────────────────── */
-function loadEvents() {
-  try { return JSON.parse(localStorage.getItem('planner_events') || '[]'); } catch { return []; }
+async function fetchEvents() {
+  try {
+    const res = await fetch('/api/events');
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
 }
-function saveEvents() {
-  localStorage.setItem('planner_events', JSON.stringify(state.events));
+async function saveEvents() {
+  try {
+    await fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state.events)
+    });
+  } catch (e) {
+    console.error('Speichern fehlgeschlagen:', e);
+  }
 }
 function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -796,7 +810,7 @@ function saveQuickEntries() {
 }
 
 /* ─── Event Wiring ───────────────────────────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
   // View switcher
   document.querySelectorAll('.view-btn').forEach(btn => {
@@ -983,7 +997,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Initial render
+  // Events vom Server laden, dann rendern
+  state.events = await fetchEvents();
   state.cursor = new Date(state.today.getFullYear(), state.today.getMonth(), 1);
   render();
 
