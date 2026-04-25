@@ -818,9 +818,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       state.view = btn.dataset.view;
-      // Normalise cursor for month view
       if (state.view === 'month') {
         state.cursor = new Date(state.cursor.getFullYear(), state.cursor.getMonth(), 1);
+      } else if (state.view === 'week' || state.view === 'twoweek') {
+        state.cursor = new Date(state.today);
       }
       render();
     });
